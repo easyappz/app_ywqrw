@@ -1,0 +1,399 @@
+openapi: 3.0.0
+info:
+  title: Easyappz Listings API
+  version: 1.0.0
+  description: API schema for authentication, listings, categories, and admin stats.
+servers:
+  - url: /api
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                password:
+                  type: string
+              required: [email, name, password]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              example:
+                token: "<jwt-token>"
+                user:
+                  id: "664b9d..."
+                  email: "user@example.com"
+                  name: "John"
+                  createdAt: "2025-01-01T00:00:00.000Z"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              example:
+                error: "User with this email already exists"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required: [email, password]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                token: "<jwt-token>"
+                user:
+                  id: "664b9d..."
+                  email: "user@example.com"
+                  name: "John"
+                  createdAt: "2025-01-01T00:00:00.000Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                error: "Invalid credentials"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /users/me:
+    get:
+      summary: Get current user profile
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          example: "Bearer <jwt-token>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                id: "664b9d..."
+                email: "user@example.com"
+                name: "John"
+                createdAt: "2025-01-01T00:00:00.000Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                error: "Authorization header is missing or malformed"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              example:
+                error: "User not found"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /users/me/listings:
+    get:
+      summary: Get current user's listings
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          example: "Bearer <jwt-token>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                - id: "6650ab..."
+                  title: "iPhone"
+                  price: 500
+                  isClosed: false
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                error: "Authorization header is missing or malformed"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /listings:
+    get:
+      summary: Get list of listings
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          example: 10
+        - in: query
+          name: isClosed
+          schema:
+            type: string
+          example: "false"
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                items:
+                  - id: "6650ab..."
+                    title: "Bike"
+                    price: 200
+                    category: "Транспорт"
+                    images: ["/uploads/1700000000_bike.jpg"]
+                    isClosed: false
+                    createdAt: "2025-01-01T00:00:00.000Z"
+                total: 25
+                page: 1
+                limit: 10
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+    post:
+      summary: Create listing
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          example: "Bearer <jwt-token>"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                category:
+                  type: string
+                location:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required: [title, description, price, category]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              example:
+                id: "6650ab..."
+                title: "Bike"
+                price: 200
+                category: "Транспорт"
+                images: ["/uploads/1700000000_bike.jpg"]
+                location: "Moscow"
+                owner: "664b9d..."
+                isClosed: false
+                createdAt: "2025-01-01T00:00:00.000Z"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              example:
+                error: "title, description, price and category are required"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                error: "Authorization header is missing or malformed"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /listings/{id}:
+    get:
+      summary: Get listing by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                id: "6650ab..."
+                title: "Bike"
+                price: 200
+                isClosed: false
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              example:
+                error: "Listing not found"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /listings/{id}/close:
+    patch:
+      summary: Close listing by id
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          example: "Bearer <jwt-token>"
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                id: "6650ab..."
+                isClosed: true
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              example:
+                error: "You are not allowed to close this listing"
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              example:
+                error: "Listing not found"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /categories:
+    get:
+      summary: Get categories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example: [
+                "Недвижимость",
+                "Транспорт",
+                "Электроника"
+              ]
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
+  /admin/stats:
+    get:
+      summary: Get admin stats
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          example: "Bearer <jwt-token>"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                totalUsers: 100
+                totalListings: 250
+                activeListings: 180
+                closedListings: 70
+                listingsByCategory:
+                  - category: "Транспорт"
+                    count: 70
+                  - category: "Недвижимость"
+                    count: 50
+                newUsers24h: 5
+                newListings24h: 12
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                error: "Authorization header is missing or malformed"
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              example:
+                error: "<error.message>"
